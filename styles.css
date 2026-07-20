@@ -317,7 +317,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); outline: 
   .nav-links { font-size: 0.84rem; }
   h1 { font-size: 2.45rem; line-height: 1.04; }
   .hero-inner { gap: 32px; padding: 46px 0 36px; }
-  .hero-logo { width: min(260px, 70vw); padding: 12px; }
+  .hero-logo { display: none; }
   .hero-actions { align-items: stretch; flex-direction: column; }
   .hero-actions .button { width: 100%; }
   .argument-list { padding-inline: 10px; }
@@ -332,7 +332,6 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); outline: 
 }
 
 @media (max-width: 420px) {
-  .hero-logo { width: min(230px, 72vw); }
   .contact-dialog-panel { padding: 20px; }
 }
 
