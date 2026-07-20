@@ -45,7 +45,7 @@
         name: "Arnav",
         role: "Founder and chapter lead",
         bio: "Leads the Stevenson founding chapter and the national launch of HSIPA, helping students turn IP awareness into practical action.",
-        url: "mailto:arnav@iclubs.org",
+        url: "mailto:arnav.chaphalkar@gmail.com",
         photo: ""
       },
       {
@@ -63,7 +63,10 @@
         school: "Adlai E. Stevenson High School",
         state: "Illinois",
         leader: "Arnav",
-        description: "Founding HSIPA chapter and the first working model for student-led IP awareness, education, and outreach."
+        description: "Founding HSIPA chapter and the first working model for student-led IP awareness, education, and outreach.",
+        contactEmail: "arnav.chaphalkar@gmail.com",
+        url: "",
+        actionLabel: "Contact this chapter"
       }
     ]
   };
@@ -75,7 +78,25 @@
   function load() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      return saved && typeof saved === "object" ? { ...clone(defaults), ...saved } : clone(defaults);
+      if (!saved || typeof saved !== "object") return clone(defaults);
+
+      const content = {
+        ...clone(defaults),
+        ...saved,
+        partners: Array.isArray(saved.partners) ? saved.partners : clone(defaults.partners),
+        team: Array.isArray(saved.team) ? saved.team : clone(defaults.team),
+        chapters: Array.isArray(saved.chapters) ? saved.chapters : clone(defaults.chapters)
+      };
+
+      content.team = content.team.map((member) => ({
+        ...member,
+        url: String(member.url || "").replace(/arnav@iclubs\.org/gi, "arnav.chaphalkar@gmail.com")
+      }));
+      content.chapters = content.chapters.map((chapter) => {
+        const original = defaults.chapters.find((item) => item.id === chapter.id) || {};
+        return { ...original, ...chapter };
+      });
+      return content;
     } catch {
       return clone(defaults);
     }
