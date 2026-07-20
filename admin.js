@@ -1,5 +1,6 @@
 const state = window.HSIPAContent.load();
 const statusElement = document.querySelector("#admin-status");
+let statusTimer;
 
 function makeId(value) {
   return `${value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
@@ -13,8 +14,14 @@ function save(message) {
   try {
     window.HSIPAContent.save(state);
     statusElement.textContent = message;
+    statusElement.classList.add("visible");
+    window.clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(() => statusElement.classList.remove("visible"), 5000);
+    return true;
   } catch {
     statusElement.textContent = "That image may be too large for browser storage. Try a smaller file.";
+    statusElement.classList.add("visible");
+    return false;
   }
 }
 
@@ -47,9 +54,18 @@ function imageFromFile(file) {
   });
 }
 
-function clearForm(form) {
-  form.reset();
-  form.elements.id.value = "";
+function setFormMode(type, item) {
+  const config = configs[type];
+  const editing = Boolean(item);
+  config.form.querySelector("h3").textContent = editing ? config.editTitle : config.addTitle;
+  config.form.querySelector(".submit-record").textContent = editing ? config.updateLabel : config.addLabel;
+}
+
+function clearForm(type) {
+  const config = configs[type];
+  config.form.reset();
+  config.form.elements.id.value = "";
+  setFormMode(type, null);
 }
 
 function renderRecords(type, recordsId) {
@@ -62,7 +78,7 @@ function renderRecords(type, recordsId) {
     const preview = image
       ? `<img class="record-preview" src="${image}" alt="">`
       : `<span class="record-preview">${initials(name)}</span>`;
-    return `<article class="record">${preview}<div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(detail)}</span></div><div class="record-actions"><button class="icon-button" type="button" data-action="edit" data-type="${type}" data-id="${item.id}" title="Edit">✎</button><button class="icon-button danger" type="button" data-action="remove" data-type="${type}" data-id="${item.id}" title="Remove">×</button></div></article>`;
+    return `<article class="record">${preview}<div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(detail)}</span></div><div class="record-actions"><button class="record-action" type="button" data-action="edit" data-type="${type}" data-id="${item.id}">Edit</button><button class="record-action danger" type="button" data-action="remove" data-type="${type}" data-id="${item.id}">Remove</button></div></article>`;
   }).join("") : "<p>No entries yet.</p>";
 }
 
@@ -74,30 +90,35 @@ function renderAll() {
 }
 
 const configs = {
-  partners: { form: document.querySelector("#partner-form"), singular: "partner", imageKey: "logo", fields: ["name", "description", "url"] },
-  team: { form: document.querySelector("#team-form"), singular: "team member", imageKey: "photo", fields: ["name", "role", "bio", "url"] },
-  chapters: { form: document.querySelector("#chapter-admin-form"), singular: "chapter", fields: ["school", "state", "leader", "description"] }
+  partners: { form: document.querySelector("#partner-form"), singular: "partner", imageKey: "logo", fields: ["name", "description", "url"], addTitle: "Add partner", editTitle: "Edit partner", addLabel: "Add partner", updateLabel: "Update partner" },
+  team: { form: document.querySelector("#team-form"), singular: "team member", imageKey: "photo", fields: ["name", "role", "bio", "url"], addTitle: "Add team member", editTitle: "Edit team member", addLabel: "Add team member", updateLabel: "Update team member" },
+  chapters: { form: document.querySelector("#chapter-admin-form"), singular: "chapter", fields: ["school", "state", "leader", "description", "contactEmail", "url", "actionLabel"], addTitle: "Add chapter", editTitle: "Edit chapter", addLabel: "Add chapter", updateLabel: "Update chapter" }
 };
 
 Object.entries(configs).forEach(([type, config]) => {
   config.form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = new FormData(config.form);
-    const existingId = formData.get("id");
-    const existing = state[type].find((item) => item.id === existingId);
-    const primary = formData.get(type === "chapters" ? "school" : "name");
-    const item = { id: existingId || makeId(primary) };
-    config.fields.forEach((field) => { item[field] = String(formData.get(field) || "").trim(); });
-    if (config.imageKey) {
-      const file = config.form.elements.image.files[0];
-      item[config.imageKey] = file ? await imageFromFile(file) : (existing?.[config.imageKey] || "");
+    try {
+      const formData = new FormData(config.form);
+      const existingId = formData.get("id");
+      const existing = state[type].find((item) => item.id === existingId);
+      const primary = formData.get(type === "chapters" ? "school" : "name");
+      const item = { id: existingId || makeId(primary) };
+      config.fields.forEach((field) => { item[field] = String(formData.get(field) || "").trim(); });
+      if (config.imageKey) {
+        const file = config.form.elements.image.files[0];
+        item[config.imageKey] = file ? await imageFromFile(file) : (existing?.[config.imageKey] || "");
+      }
+      const index = state[type].findIndex((record) => record.id === item.id);
+      if (index >= 0) state[type][index] = item;
+      else state[type].push(item);
+      if (!save(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} saved. The homepage will show the change after refresh.`)) return;
+      clearForm(type);
+      renderAll();
+    } catch {
+      statusElement.textContent = "This record could not be saved. Check the fields and try a smaller image.";
+      statusElement.classList.add("visible");
     }
-    const index = state[type].findIndex((record) => record.id === item.id);
-    if (index >= 0) state[type][index] = item;
-    else state[type].push(item);
-    save(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} saved. Refresh the homepage to see the update.`);
-    clearForm(config.form);
-    renderAll();
   });
 });
 
@@ -112,17 +133,32 @@ document.addEventListener("click", (event) => {
     if (!window.confirm(`Remove ${item.name || item.school}?`)) return;
     state[type] = state[type].filter((record) => record.id !== id);
     save("Entry removed.");
+    clearForm(type);
     renderAll();
     return;
   }
-  clearForm(config.form);
+  clearForm(type);
   config.form.elements.id.value = item.id;
   config.fields.forEach((field) => { config.form.elements[field].value = item[field] || ""; });
+  setFormMode(type, item);
   config.form.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 document.querySelectorAll(".cancel-edit").forEach((button) => {
-  button.addEventListener("click", () => clearForm(button.closest("form")));
+  button.addEventListener("click", () => {
+    const type = Object.keys(configs).find((key) => configs[key].form === button.closest("form"));
+    clearForm(type);
+  });
+});
+
+document.querySelectorAll(".new-record").forEach((button) => {
+  button.addEventListener("click", () => {
+    const type = Object.keys(configs).find((key) => configs[key].form.id === button.dataset.form);
+    clearForm(type);
+    configs[type].form.scrollIntoView({ behavior: "smooth", block: "center" });
+    const firstField = configs[type].form.querySelector("input:not([type=hidden])");
+    firstField.focus();
+  });
 });
 
 document.querySelector("#show-chapters").addEventListener("change", (event) => {
@@ -137,7 +173,7 @@ document.querySelector("#export-button").addEventListener("click", () => {
   link.download = "hsipa-content-backup.json";
   link.click();
   URL.revokeObjectURL(link.href);
-  statusElement.textContent = "Backup exported.";
+  save("Backup exported.");
 });
 
 document.querySelector("#import-input").addEventListener("change", async (event) => {
@@ -151,6 +187,7 @@ document.querySelector("#import-input").addEventListener("change", async (event)
     renderAll();
   } catch {
     statusElement.textContent = "That file is not a valid HSIPA content backup.";
+    statusElement.classList.add("visible");
   }
   event.target.value = "";
 });
@@ -158,8 +195,9 @@ document.querySelector("#import-input").addEventListener("change", async (event)
 document.querySelector("#reset-button").addEventListener("click", () => {
   if (!window.confirm("Restore the original partners, team, and chapter records?")) return;
   Object.assign(state, window.HSIPAContent.reset());
+  Object.keys(configs).forEach(clearForm);
   renderAll();
-  statusElement.textContent = "Original content restored.";
+  save("Original content restored.");
 });
 
 renderAll();
