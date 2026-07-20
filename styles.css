@@ -88,10 +88,8 @@ button, input, textarea, select { font: inherit; }
   padding: 74px 0 58px;
 }
 .hero-content { max-width: 750px; }
-.kicker { margin: 0 0 14px; color: var(--pine); font-size: 0.74rem; font-weight: 900; text-transform: uppercase; }
-.kicker::before { display: inline-block; width: 8px; height: 8px; margin: 0 9px 1px 0; border: 2px solid var(--pine); content: ""; background: var(--yellow); }
+.kicker { margin: 0 0 12px; color: var(--pine); font-size: 0.74rem; font-weight: 900; text-transform: uppercase; }
 .kicker.light { color: #d9eee3; }
-.kicker.light::before { border-color: #d9eee3; }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2 { color: var(--pine-dark); font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: 0; }
 h1 { max-width: 760px; margin-bottom: 20px; font-size: clamp(2.6rem, 5.2vw, 4.7rem); line-height: 1; }
