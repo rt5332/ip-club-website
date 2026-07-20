@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HSIPA Content Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .admin-shell { width: min(1060px, calc(100% - 36px)); margin: 0 auto; padding: 40px 0 70px; }
+    .admin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; margin-bottom: 30px; }
+    .admin-header h1 { max-width: none; margin-bottom: 8px; font-size: clamp(2rem, 3.4vw, 2.8rem); }
+    .admin-header p { max-width: 650px; margin-bottom: 0; color: var(--muted); }
+    .admin-toolbar { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 20px; padding: 13px 0; border-block: 1px solid var(--line); }
+    .admin-toolbar .button { min-height: 38px; }
+    .admin-section { padding: 28px 0; border-bottom: 1px solid var(--line); }
+    .admin-section-header { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    .admin-section-header h2 { font-size: 1.65rem; }
+    .admin-section-header p { margin: 5px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .editor-grid { display: grid; grid-template-columns: minmax(300px, 0.75fr) minmax(0, 1.25fr); gap: 22px; align-items: start; }
+    .editor-form { padding: 20px; border: 1px solid var(--line); background: var(--white); }
+    .editor-form .form-grid { grid-template-columns: 1fr; }
+    .records { display: grid; gap: 9px; }
+    .record { display: grid; grid-template-columns: 52px 1fr auto; gap: 13px; align-items: center; padding: 13px; border: 1px solid var(--line); background: var(--mist); }
+    .record-preview { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 5px; object-fit: contain; color: var(--pine-dark); background: var(--mint); font-size: 0.75rem; font-weight: 900; }
+    .record strong, .record span { display: block; }
+    .record span { color: var(--muted); font-size: 0.82rem; }
+    .record-actions { display: flex; gap: 6px; }
+    .icon-button { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 5px; cursor: pointer; color: var(--pine-dark); background: var(--white); font-weight: 900; }
+    .icon-button.danger { color: #8b3425; }
+    .visibility-row { display: flex; align-items: center; gap: 10px; color: var(--pine-dark); font-weight: 800; }
+    .visibility-row input { width: 18px; height: 18px; }
+    .admin-status { min-height: 24px; margin: 14px 0 0; color: var(--pine); font-weight: 800; }
+    .data-note { padding: 13px 15px; border-left: 4px solid var(--yellow); background: #fff9e7; color: #64552e; font-size: 0.88rem; }
+    @media (max-width: 760px) {
+      .admin-header, .admin-section-header { align-items: flex-start; flex-direction: column; }
+      .editor-grid { grid-template-columns: 1fr; }
+      .record { grid-template-columns: 44px 1fr; }
+      .record-preview { width: 44px; height: 44px; }
+      .record-actions { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="kicker">HSIPA administration</p>
+        <h1>Content studio</h1>
+        <p>Add, edit, and remove partners, student leaders, and chapters. Changes appear on the homepage in this browser as soon as they are saved.</p>
+      </div>
+      <a class="button secondary" href="index.html">View homepage</a>
+    </header>
+
+    <p class="data-note">This first version stores content on this laptop. Use Export backup to keep a copy or move the content to another browser.</p>
+    <div class="admin-toolbar">
+      <button class="button secondary" id="export-button" type="button">Export backup</button>
+      <label class="button secondary" for="import-input">Import backup</label>
+      <input id="import-input" type="file" accept="application/json" hidden>
+      <button class="button secondary" id="reset-button" type="button">Restore defaults</button>
+    </div>
+
+    <section class="admin-section" id="partners-admin">
+      <div class="admin-section-header">
+        <div><h2>Partners</h2><p>Upload an approved logo, add details, or remove an organization.</p></div>
+      </div>
+      <div class="editor-grid">
+        <form class="editor-form" id="partner-form">
+          <input type="hidden" name="id">
+          <div class="form-grid">
+            <div class="field"><label for="partner-name">Organization name</label><input id="partner-name" name="name" required></div>
+            <div class="field"><label for="partner-description">Short description</label><textarea id="partner-description" name="description" required></textarea></div>
+            <div class="field"><label for="partner-url">Website or link</label><input id="partner-url" name="url" type="url" placeholder="https://"></div>
+            <div class="field"><label for="partner-logo">Approved logo</label><input id="partner-logo" name="image" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          </div>
+          <div class="form-actions"><button class="button primary" type="submit">Save partner</button><button class="button secondary cancel-edit" type="button">Clear</button></div>
+        </form>
+        <div class="records" id="partner-records"></div>
+      </div>
+    </section>
+
+    <section class="admin-section" id="team-admin">
+      <div class="admin-section-header">
+        <div><h2>Students and team</h2><p>Maintain names, roles, bios, photos, and profile links.</p></div>
+      </div>
+      <div class="editor-grid">
+        <form class="editor-form" id="team-form">
+          <input type="hidden" name="id">
+          <div class="form-grid">
+            <div class="field"><label for="member-name">Name</label><input id="member-name" name="name" required></div>
+            <div class="field"><label for="member-role">Role</label><input id="member-role" name="role" required></div>
+            <div class="field"><label for="member-bio">Short bio</label><textarea id="member-bio" name="bio" required></textarea></div>
+            <div class="field"><label for="member-url">Profile or email link</label><input id="member-url" name="url" placeholder="https:// or mailto:"></div>
+            <div class="field"><label for="member-photo">Photo</label><input id="member-photo" name="image" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          </div>
+          <div class="form-actions"><button class="button primary" type="submit">Save team member</button><button class="button secondary cancel-edit" type="button">Clear</button></div>
+        </form>
+        <div class="records" id="team-records"></div>
+      </div>
+    </section>
+
+    <section class="admin-section" id="chapters-admin">
+      <div class="admin-section-header">
+        <div><h2>Chapters</h2><p>Keep the chapter record current and choose when the directory appears publicly.</p></div>
+        <label class="visibility-row"><input id="show-chapters" type="checkbox"> Show chapter directory</label>
+      </div>
+      <div class="editor-grid">
+        <form class="editor-form" id="chapter-admin-form">
+          <input type="hidden" name="id">
+          <div class="form-grid">
+            <div class="field"><label for="chapter-school">School</label><input id="chapter-school" name="school" required></div>
+            <div class="field"><label for="chapter-state">State</label><input id="chapter-state" name="state" required></div>
+            <div class="field"><label for="chapter-leader">Chapter lead</label><input id="chapter-leader" name="leader" required></div>
+            <div class="field"><label for="chapter-description">Short description</label><textarea id="chapter-description" name="description"></textarea></div>
+          </div>
+          <div class="form-actions"><button class="button primary" type="submit">Save chapter</button><button class="button secondary cancel-edit" type="button">Clear</button></div>
+        </form>
+        <div class="records" id="chapter-records"></div>
+      </div>
+    </section>
+
+    <p class="admin-status" id="admin-status" role="status" aria-live="polite"></p>
+  </main>
+  <script src="content.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
