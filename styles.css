@@ -320,6 +320,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); outline: 
   .hero-logo { width: min(260px, 70vw); padding: 12px; }
   .hero-actions { align-items: stretch; flex-direction: column; }
   .hero-actions .button { width: 100%; }
+  .argument-list { padding-inline: 10px; }
   .founding-bar, .founding-bar > div, .join-team-strip, .contact-panel { align-items: flex-start; flex-direction: column; gap: 7px; }
   .statement-inner, .section { padding: 54px 0; }
   .mission-grid, .team-grid, .tracks-grid, .partners-grid, .directory-grid, .roadmap, .form-grid { grid-template-columns: 1fr; }
