@@ -1,4 +1,5 @@
 :root {
+  --header-offset: 92px;
   --pine: #087044;
   --pine-dark: #113b2b;
   --ink: #183127;
@@ -15,7 +16,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--header-offset); }
 body {
   margin: 0;
   color: var(--ink);
@@ -246,6 +247,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); outline: 
 .footer a { color: #d8e9df; font-weight: 800; }
 
 @media (max-width: 1060px) {
+  :root { --header-offset: 82px; }
   .nav { gap: 20px; width: min(100% - 36px, 1160px); min-height: 68px; }
   .brand { min-width: 0; }
   .nav-toggle {
@@ -306,6 +308,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); outline: 
 }
 
 @media (max-width: 680px) {
+  :root { --header-offset: 74px; }
   .nav, .hero-inner, .founding-bar, .statement-inner, .section, .footer-inner { width: min(100% - 28px, 1160px); }
   .nav { min-height: 62px; }
   .brand { gap: 9px; }
