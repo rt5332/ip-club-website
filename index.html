@@ -17,7 +17,12 @@
           <span>High School Intellectual Property Alliance</span>
         </span>
       </a>
-      <div class="nav-links">
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav-links" aria-label="Open navigation">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+      <div class="nav-links" id="primary-nav-links">
         <div class="nav-sections">
           <a href="#mission">Why HSIPA</a>
           <a href="#program">What clubs do</a>
@@ -587,6 +592,31 @@
     });
 
     document.querySelector("#copy-chapter-message").addEventListener("click", () => copyText(preparedChapterMessage, status));
+
+    const navToggle = document.querySelector(".nav-toggle");
+    const navLinks = document.querySelector("#primary-nav-links");
+
+    function setNavigationOpen(isOpen) {
+      navToggle.setAttribute("aria-expanded", String(isOpen));
+      navToggle.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation");
+      navLinks.classList.toggle("is-open", isOpen);
+    }
+
+    navToggle.addEventListener("click", () => {
+      setNavigationOpen(navToggle.getAttribute("aria-expanded") !== "true");
+    });
+
+    navLinks.addEventListener("click", (event) => {
+      if (event.target.closest("a")) setNavigationOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setNavigationOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 1060) setNavigationOpen(false);
+    });
   </script>
 </body>
 </html>
