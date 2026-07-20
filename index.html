@@ -267,7 +267,7 @@
           </div>
         </div>
 
-        <form class="form-panel" id="chapter-form">
+        <form class="form-panel" id="chapter-form" action="send-message.php" method="post">
           <h3>Express interest</h3>
           <p>Share the details our team needs to begin an onboarding conversation.</p>
           <div class="form-grid">
@@ -302,9 +302,13 @@
               <label for="message">Anything else you would like us to know? <span>(optional)</span></label>
               <textarea id="message" name="message" placeholder="Share your goals, potential members, sponsor status, or questions."></textarea>
             </div>
+            <div class="hp-field" aria-hidden="true">
+              <label for="chapter-website">Website</label>
+              <input id="chapter-website" name="website" tabindex="-1" autocomplete="off">
+            </div>
           </div>
           <div class="form-actions">
-            <button class="button primary" type="submit">Prepare my chapter message</button>
+            <button class="button primary" type="submit">Send chapter interest</button>
           </div>
           <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
           <div class="message-actions" id="chapter-message-actions" hidden>
@@ -317,7 +321,7 @@
   </main>
 
   <dialog class="contact-dialog" id="contact-dialog" aria-labelledby="contact-dialog-title">
-    <form class="contact-dialog-panel" id="contact-form">
+    <form class="contact-dialog-panel" id="contact-form" action="send-message.php" method="post">
       <div class="dialog-header">
         <div>
           <p class="kicker">Contact HSIPA</p>
@@ -340,9 +344,13 @@
           <label for="contact-message">Message</label>
           <textarea id="contact-message" name="message" required placeholder="How would you like to get involved or what would you like to know?"></textarea>
         </div>
+        <div class="hp-field" aria-hidden="true">
+          <label for="contact-website">Website</label>
+          <input id="contact-website" name="website" tabindex="-1" autocomplete="off">
+        </div>
       </div>
       <div class="form-actions">
-        <button class="button primary" type="submit">Prepare message</button>
+        <button class="button primary" type="submit">Send message</button>
         <button class="button secondary" id="cancel-contact-dialog" type="button">Cancel</button>
       </div>
       <p class="form-status" id="contact-status" role="status" aria-live="polite"></p>
@@ -443,6 +451,24 @@
       return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
+    async function sendToServer(data) {
+      const response = await fetch("send-message.php", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: data
+      });
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("The hosting server did not return a valid response.");
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "The message could not be sent.");
+      }
+      return result;
+    }
+
     async function copyText(value, statusTarget) {
       try {
         await navigator.clipboard.writeText(value);
@@ -479,10 +505,11 @@
       if (event.target === contactDialog) closeContactDialog();
     });
 
-    contactForm.addEventListener("submit", (event) => {
+    contactForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(contactForm);
       const context = contactContext.textContent;
+      const submitButton = contactForm.querySelector("button[type=submit]");
       const body = [
         "Hello HSIPA team,",
         "",
@@ -494,8 +521,21 @@
       ].join("\n");
       preparedContactMessage = `To: ${data.get("recipient")}\nSubject: ${context}\n\n${body}`;
       openContactEmail.href = buildMailto(data.get("recipient"), context, body);
-      contactStatus.textContent = "Your message is ready. Open your email app or copy the complete message.";
-      contactActions.hidden = false;
+      data.set("type", "contact");
+      data.set("context", context);
+      contactStatus.textContent = "Sending your message...";
+      contactActions.hidden = true;
+      submitButton.disabled = true;
+      try {
+        const result = await sendToServer(data);
+        contactStatus.textContent = result.message;
+        contactForm.reset();
+      } catch (error) {
+        contactStatus.textContent = `${error.message} You can still open your email app or copy the complete message.`;
+        contactActions.hidden = false;
+      } finally {
+        submitButton.disabled = false;
+      }
     });
 
     document.querySelector("#copy-contact-message").addEventListener("click", () => copyText(preparedContactMessage, contactStatus));
@@ -505,9 +545,10 @@
     const chapterMessageActions = document.querySelector("#chapter-message-actions");
     const openChapterEmail = document.querySelector("#open-chapter-email");
     let preparedChapterMessage = "";
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(form);
+      const submitButton = form.querySelector("button[type=submit]");
       const subject = `IP club interest: ${data.get("school")} (${data.get("state")})`;
       const body = [
         "Hello HSIPA team,",
@@ -526,8 +567,21 @@
 
       preparedChapterMessage = `To: arnav.chaphalkar@gmail.com\nSubject: ${subject}\n\n${body}`;
       openChapterEmail.href = buildMailto("arnav.chaphalkar@gmail.com", subject, body);
-      status.textContent = "Your message is ready. Send it through your email app and our team will follow up to schedule a meeting.";
-      chapterMessageActions.hidden = false;
+      data.set("type", "chapter_interest");
+      data.set("context", "Starting an IP club");
+      status.textContent = "Sending your chapter interest...";
+      chapterMessageActions.hidden = true;
+      submitButton.disabled = true;
+      try {
+        const result = await sendToServer(data);
+        status.textContent = `${result.message} Our team will follow up to schedule a meeting.`;
+        form.reset();
+      } catch (error) {
+        status.textContent = `${error.message} You can still open your email app or copy the complete message.`;
+        chapterMessageActions.hidden = false;
+      } finally {
+        submitButton.disabled = false;
+      }
     });
 
     document.querySelector("#copy-chapter-message").addEventListener("click", () => copyText(preparedChapterMessage, status));
